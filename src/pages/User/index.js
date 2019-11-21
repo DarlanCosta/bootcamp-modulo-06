@@ -1,7 +1,20 @@
 import React, { Component } from 'react';
+import { ActivityIndicator } from 'react-native';
 import PropTypes from 'prop-types';
 import api from '../../services/api';
-import { Container, Header, Avatar, Name, Bio } from './styles';
+import {
+  Container,
+  Header,
+  Avatar,
+  Name,
+  Bio,
+  Stars,
+  Starred,
+  OwnerAvatar,
+  Info,
+  Title,
+  Author,
+} from './styles';
 
 class User extends Component {
   static navigationOptions = ({ navigation }) => ({
@@ -10,20 +23,29 @@ class User extends Component {
 
   state = {
     stars: [],
+    loading: false,
   };
 
   async componentDidMount() {
     const { navigation } = this.props;
+    this.setState({ loading: true });
     const user = navigation.getParam('user');
 
     const response = await api.get(`/users/${user.login}/starred`);
 
+    this.setState({ stars: response.data, loading: false });
+  }
+
+  async loadMore() {
+    const { navigation } = this.props;
+    const user = navigation.getParam('user');
+    const response = await api.get(`/users/${user.login}/starred?page=2`);
     this.setState({ stars: response.data });
   }
 
   render() {
     const { navigation } = this.props;
-    const { stars } = this.state;
+    const { stars, loading } = this.state;
 
     const user = navigation.getParam('user');
     return (
@@ -34,19 +56,25 @@ class User extends Component {
           <Bio>{user.bio}</Bio>
         </Header>
 
-        <Stars
-          data={stars}
-          keyExtractor={star => String(star.id)}
-          renderItem={({ item }) => (
-            <Starred>
-              <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
-              <Info>
-                <Title />
-                <Author />
-              </Info>
-            </Starred>
-          )}
-        />
+        {loading ? (
+          <ActivityIndicator size={48} color="#7159c1" />
+        ) : (
+          <Stars
+            onEndReachedThreshold={0.2} // Carrega mais itens quando chegar em 20% do fim
+            onEndReached={this.loadMore}
+            data={stars}
+            keyExtractor={star => String(star.id)}
+            renderItem={({ item }) => (
+              <Starred>
+                <OwnerAvatar source={{ uri: item.owner.avatar_url }} />
+                <Info>
+                  <Title>{item.name}</Title>
+                  <Author>{item.owner.login}</Author>
+                </Info>
+              </Starred>
+            )}
+          />
+        )}
       </Container>
     );
   }
@@ -54,7 +82,7 @@ class User extends Component {
 
 User.propTypes = {
   navigation: PropTypes.shape({
-    getParams: PropTypes.func,
+    getParam: PropTypes.func,
   }).isRequired,
 };
 

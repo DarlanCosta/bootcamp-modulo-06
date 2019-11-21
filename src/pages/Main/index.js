@@ -67,7 +67,11 @@ class Main extends Component {
   handleNavigate = user => {
     const { navigation } = this.props;
 
+    this.setState({ loading: true });
+
     navigation.navigate('User', { user });
+
+    this.setState({ loading: false });
   };
 
   static navigationOptions = {
@@ -119,9 +123,11 @@ class Main extends Component {
 
 Main.propTypes = {
   match: PropTypes.shape({
-    params: PropTypes.shape({
-      repository: PropTypes.string,
-    }),
+    params: PropTypes.shape({ repository: PropTypes.string }),
+  }).isRequired,
+  navigation: PropTypes.shape({
+    getParam: PropTypes.func,
+    navigate: PropTypes.func,
   }).isRequired,
 };
 
